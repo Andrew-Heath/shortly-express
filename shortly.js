@@ -72,6 +72,19 @@ function(req, res) {
   });
 });
 
+app.post('/signup', function(req, res) {
+  var username = req.body.username;
+  var password = req.body.password;
+  var salt = new Date().valueOf();
+  var newUser = User;
+
+  newUser.username = username;
+  newUser.password = newUser.hashSync(password, salt);
+  newUser.salt = salt;
+
+
+});
+
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/

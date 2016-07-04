@@ -5,6 +5,9 @@ var Promise = require('bluebird');
 
 
 var User = db.Model.extend({
+  username: null,
+  password: null,
+  salt: null
 });
 
 module.exports = User;
