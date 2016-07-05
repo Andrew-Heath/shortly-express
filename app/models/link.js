@@ -8,13 +8,15 @@ var Link = db.Model.extend({
   defaults: {
     visits: 0
   },
+
   clicks: function() {
     return this.hasMany(Click);
   },
   initialize: function() {
     this.on('creating', function(model, attrs, options) {
       var shasum = crypto.createHash('sha1');
-      shasum.update(model.get('url'));
+      var salt = (new Date()).valueOf();
+      shasum.update(model.get('url') + salt.toString());
       model.set('code', shasum.digest('hex').slice(0, 5));
     });
   }

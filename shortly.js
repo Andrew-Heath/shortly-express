@@ -55,8 +55,10 @@ function(req, res) {
 
 app.get('/links', 
 function(req, res) {
+
   Links.reset().fetch().then(function(links) {
-    res.status(200).send(links.models);
+    var userLinks = links.where({username: sess.username});
+    res.status(200).send(userLinks);
   });
 });
 
@@ -69,7 +71,7 @@ function(req, res) {
     return res.sendStatus(404);
   }
 
-  new Link({ url: uri }).fetch().then(function(found) {
+  new Link({ url: uri, username: sess.username}).fetch().then(function(found) {
     if (found) {
       res.status(200).send(found.attributes);
     } else {
@@ -82,7 +84,8 @@ function(req, res) {
         Links.create({
           url: uri,
           title: title,
-          baseUrl: req.headers.origin
+          baseUrl: req.headers.origin,
+          username: sess.username
         })
         .then(function(newLink) {
           res.status(200).send(newLink);
@@ -97,7 +100,7 @@ function(req, res) {
 /************************************************************/
 
 app.get('/logout', function(req, res) {
-  req.session.username = null;
+  sess = null;
   res.redirect('/login');
 });
 
@@ -109,7 +112,8 @@ app.post('/signup', function(req, res) {
   // store new user in the database
   Users.create(newUser)
   .then(function(newUser) {
-    req.session.username = username;
+    sess = req.session;
+    sess.username = username;
     res.status(200).redirect('/');
   });
 });
