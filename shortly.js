@@ -14,6 +14,7 @@ var session = require('express-session');
 var cookieParser = require('cookie-parser');
 
 var app = express();
+var sess;
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -28,8 +29,6 @@ app.use(session({
   secret: 'nyan cat',
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: true },
-  username: null
 }));
 app.use(util.sessionRouter);
 
@@ -98,7 +97,7 @@ function(req, res) {
 /************************************************************/
 
 app.get('/logout', function(req, res) {
-  req.session.cookie.username = null;
+  req.session.username = null;
   res.redirect('/login');
 });
 
@@ -126,7 +125,8 @@ app.post('/login', function(req, res) {
       var user = userList[0];
       // compare newHash to saved hash
       if (user.password === bcrypt.hashSync(password, user.salt)) {
-        req.session.cookie.username = username;
+        sess = req.session;
+        sess.username = username;
         res.status(200).redirect('/');
       } else {
         res.status(401).redirect('/login');
