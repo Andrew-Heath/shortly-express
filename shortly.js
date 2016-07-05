@@ -97,6 +97,11 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+app.get('/logout', function(req, res) {
+  req.session.cookie.username = null;
+  res.redirect('/login');
+});
+
 app.post('/signup', function(req, res) {
   var username = req.body.username;
   var password = req.body.password;
@@ -122,7 +127,6 @@ app.post('/login', function(req, res) {
       // compare newHash to saved hash
       if (user.password === bcrypt.hashSync(password, user.salt)) {
         req.session.cookie.username = username;
-        console.log('session', req.session);
         res.status(200).redirect('/');
       } else {
         res.status(401).redirect('/login');
