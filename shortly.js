@@ -2,7 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-
+var bcrypt = require('bcrypt-nodejs');
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -10,6 +10,8 @@ var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
+var session = require('express-session');
+var cookieParser = require('cookie-parser');
 
 var app = express();
 
@@ -21,6 +23,13 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+app.use(cookieParser());
+app.use(session({
+  secret: 'nyan cat',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: true }
+}));
 
 
 app.get('/', 
@@ -72,24 +81,49 @@ function(req, res) {
   });
 });
 
-app.post('/signup', function(req, res) {
-  var username = req.body.username;
-  var password = req.body.password;
-  var salt = new Date().valueOf();
-  var newUser = User;
-
-  newUser.username = username;
-  newUser.password = newUser.hashSync(password, salt);
-  newUser.salt = salt;
-
-
-});
-
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
 
+app.post('/signup', function(req, res) {
+  var username = req.body.username;
+  var password = req.body.password;
+  var newUser = new User({username: username, password: password});
 
+  // store new user in the database
+  Users.create(newUser)
+  .then(function(newUser) {
+    res.status(200).redirect('/');
+  });
+});
+
+app.post('/login', function(req, res) {
+  var username = req.body.username;
+  var password = req.body.password;
+
+  db.knex('users')
+  .where('username', '=', username)
+  .then(function(userList) {
+    if (userList[0]) {
+      var user = userList[0];
+      // compare newHash to saved hash
+      if (user.password === bcrypt.hashSync(password, user.salt)) {
+        res.status(200).redirect('/');
+      } else {
+        res.status(401).redirect('/login');
+      }
+    } else {
+      res.status(401).redirect('/login');
+    }
+  }).catch(function(err) {
+    console.log('error thrown');
+    throw {
+      type: 'Unkown User/Password',
+      message: 'Unknown User or Password, please try again'
+    };
+  });
+
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
