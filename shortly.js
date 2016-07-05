@@ -28,7 +28,8 @@ app.use(session({
   secret: 'nyan cat',
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: true }
+  cookie: { secure: true },
+  username: null
 }));
 app.use(util.sessionRouter);
 
@@ -104,6 +105,7 @@ app.post('/signup', function(req, res) {
   // store new user in the database
   Users.create(newUser)
   .then(function(newUser) {
+    req.session.username = username;
     res.status(200).redirect('/');
   });
 });
@@ -119,6 +121,8 @@ app.post('/login', function(req, res) {
       var user = userList[0];
       // compare newHash to saved hash
       if (user.password === bcrypt.hashSync(password, user.salt)) {
+        req.session.cookie.username = username;
+        console.log('session', req.session);
         res.status(200).redirect('/');
       } else {
         res.status(401).redirect('/login');
